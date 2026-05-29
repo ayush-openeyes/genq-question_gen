@@ -1,0 +1,12 @@
+{
+  "name": "genq-exports",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix sme-web",
+    "typecheck": "npm run typecheck --prefix sme-web",
+    "dev": "npm run dev --prefix sme-web"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+sme-web/node_modules/
+
+# Build output
+dist/
+sme-web/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Local env and generated workspace folders
+.env
+.env.*
+!.env.example
+.venv/
+stage-*/
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store

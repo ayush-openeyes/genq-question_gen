@@ -1,0 +1,8 @@
+export const ANIMATION_STAGGER_MS = 60;
+export const ANIMATION_BASE_DELAY_MS = 240;
+export const LOADING_SIMULATION_MS = 800;
+export const SEARCH_FOCUS_DELAY_MS = 50;
+export const LIST_NAME_MAX_LENGTH = 80;
+export const LIST_DESCRIPTION_MAX_LENGTH = 200;
+export const LOGO_SVG_STROKE_WIDTH = 1.5;
+export const LOGO_SVG_CORNER_OPACITY = 0.7;

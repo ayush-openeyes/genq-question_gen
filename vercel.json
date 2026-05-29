@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm ci --prefix sme-web",
+  "buildCommand": "npm run build --prefix sme-web",
+  "outputDirectory": "sme-web/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
