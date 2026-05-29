@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, FileText, LogOut, Wand2,
+  ChevronLeft, ChevronRight, FileText, Loader2, LogOut, Wand2,
 } from 'lucide-react';
 import { useAuth, ROLE_LABELS } from '../../context/AuthContext';
 import { useHistorySessions } from '../../context/HistoryContext';
@@ -17,8 +17,9 @@ const PDF_FILES = ['aws_documentaion.pdf', 'clinic_trail_v2.pdf', 'google_reserc
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
+  const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
   const { user, role, logout } = useAuth();
-  const { historySessions, activeHistoryId, selectHistory } = useHistorySessions();
+  const { historySessions, activeHistoryId, selectHistory, resetGenerator } = useHistorySessions();
   const navigate = useNavigate();
 
   const visibleItems = useMemo(
@@ -31,7 +32,10 @@ export default function Sidebar() {
     navigate('/generate', { replace: true });
   }, [logout, navigate]);
 
-  const handleLogoClick = useCallback(() => navigate('/generate'), [navigate]);
+  const handleLogoClick = useCallback(() => {
+    resetGenerator();
+    navigate('/generate');
+  }, [navigate, resetGenerator]);
 
   const handleCollapseToggle = useCallback(() => setCollapsed(prev => !prev), []);
 
@@ -42,6 +46,15 @@ export default function Sidebar() {
         : [...current, file]
     ));
   }, []);
+
+  const handleHistoryClick = useCallback((id: string) => {
+    setLoadingHistoryId(id);
+    navigate('/generate');
+    window.setTimeout(() => {
+      selectHistory(id);
+      setLoadingHistoryId(null);
+    }, 220);
+  }, [navigate, selectHistory]);
 
   const avatarDisplay = user?.avatar || (user?.name
     ? user.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
@@ -78,6 +91,7 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => resetGenerator()}
               className={({ isActive }) =>
                 `flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg text-sm transition-all mb-0.5 focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-inset ${
                   isActive
@@ -131,7 +145,7 @@ export default function Sidebar() {
         )}
 
         {!collapsed && (
-          <div className="mx-2 mt-3 rounded-xl border border-white/10 bg-white/[0.06] p-3 shadow-card">
+          <div className="mx-2 mt-7 rounded-xl border border-white/10 bg-white/[0.06] p-3 shadow-card">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Recent History</span>
               <span className="rounded-full bg-teal/15 px-2 py-0.5 text-[10px] font-bold text-teal">{historySessions.length}</span>
@@ -142,7 +156,7 @@ export default function Sidebar() {
                 <button
                   type="button"
                   key={session.id}
-                  onClick={() => selectHistory(session.id)}
+                  onClick={() => handleHistoryClick(session.id)}
                   aria-pressed={activeHistoryId === session.id}
                   className={`w-full rounded-lg border px-2.5 py-2 text-left transition-all focus-visible:ring-2 focus-visible:ring-teal ${
                     activeHistoryId === session.id
@@ -150,7 +164,10 @@ export default function Sidebar() {
                       : 'border-white/10 bg-white/[0.07] text-white/75 hover:border-teal/35 hover:bg-teal/10 hover:text-white'
                   }`}
                 >
-                  <span className="block truncate text-[11px] font-semibold leading-tight">{session.title}</span>
+                  <span className="flex items-center gap-1.5 truncate text-[11px] font-semibold leading-tight">
+                    {loadingHistoryId === session.id && <Loader2 size={10} className="shrink-0 animate-spin text-teal" aria-hidden="true" />}
+                    <span className="truncate">{session.title}</span>
+                  </span>
                   <span className="mt-1 block text-[10px] text-white/40">
                     {session.questions.length} generated questions
                   </span>

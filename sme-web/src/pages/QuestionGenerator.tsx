@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle, Bookmark, CheckCircle2, ChevronDown, ChevronUp, Copy,
   Loader2, Pencil, Trash2, Wand2, X,
@@ -124,7 +124,7 @@ function toHistoryTitle(topic: string, formats: string[]) {
 
 export default function QuestionGenerator() {
   const toast = useToast();
-  const { activeHistory, addHistorySession } = useHistorySessions();
+  const { activeHistory, resetVersion, addHistorySession } = useHistorySessions();
   const [project, setProject] = useState('');
   const [topic, setTopic] = useState('');
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -159,15 +159,55 @@ export default function QuestionGenerator() {
     }, {});
   }, [generated]);
 
+  const resetGeneratorForm = useCallback(() => {
+    setProject('');
+    setTopic('');
+    setSelectedFormats([]);
+    setQuestionDistribution({});
+    setQuantity(10);
+    setDifficulty(1);
+    setAdvancedOpen(false);
+    setGenerating(false);
+    setGenerated([]);
+    setHistoryOpen(false);
+    setSelectedBlooms([]);
+    setAvoidTopics('');
+    setTone('Professional');
+    setAnswerKey(true);
+    setErrors({});
+  }, []);
+
+  useEffect(() => {
+    resetGeneratorForm();
+  }, [resetGeneratorForm, resetVersion]);
+
   useEffect(() => {
     if (!activeHistory) {
-      setGenerating(false);
-      setGenerated([]);
+      resetGeneratorForm();
       return;
     }
-    setGenerating(false);
-    setGenerated(activeHistory.questions);
-  }, [activeHistory]);
+
+    const settings = activeHistory.settings;
+    if (settings) {
+      setProject(settings.project);
+      setTopic(settings.topic);
+      setSelectedFormats(settings.formats);
+      setQuestionDistribution(settings.distribution);
+      setQuantity(settings.quantity);
+      setDifficulty(settings.difficulty);
+    }
+
+    setErrors({});
+    setGenerated([]);
+    setGenerating(true);
+
+    const timer = window.setTimeout(() => {
+      setGenerated(activeHistory.questions);
+      setGenerating(false);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [activeHistory, resetGeneratorForm]);
 
   const toggleFormat = (format: string) => {
     setSelectedFormats(prev => {
@@ -230,7 +270,14 @@ export default function QuestionGenerator() {
     window.setTimeout(() => {
       setGenerated(nextQuestions);
       setGenerating(false);
-      addHistorySession(toHistoryTitle(topic, selectedFormats), nextQuestions);
+      addHistorySession(toHistoryTitle(topic, selectedFormats), nextQuestions, {
+        project,
+        topic,
+        formats: selectedFormats,
+        distribution: questionDistribution,
+        quantity,
+        difficulty,
+      });
       toast(`${nextQuestions.length} questions generated successfully.`, 'success');
     }, 700);
   };

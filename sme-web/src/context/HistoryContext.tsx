@@ -10,132 +10,195 @@ export type GeneratedQuestion = {
   rubric?: string;
 };
 
+export type HistorySessionSettings = {
+  project: string;
+  topic: string;
+  formats: string[];
+  distribution: Record<string, number>;
+  quantity: number;
+  difficulty: number;
+};
+
 export type HistorySession = {
   id: string;
   title: string;
   questions: GeneratedQuestion[];
+  settings?: HistorySessionSettings;
 };
 
 type HistoryContextValue = {
   historySessions: HistorySession[];
   activeHistoryId: string | null;
   activeHistory: HistorySession | null;
+  resetVersion: number;
   selectHistory: (id: string) => void;
-  addHistorySession: (title: string, questions: GeneratedQuestion[]) => void;
+  resetGenerator: () => void;
+  addHistorySession: (title: string, questions: GeneratedQuestion[], settings?: HistorySessionSettings) => void;
 };
 
-const DEMO_HISTORY_QUESTIONS: GeneratedQuestion[] = [
-      {
-        id: 'demo-mcq-1',
-        format: 'Multiple Choice (Single Answer)',
-        difficulty: 'Medium',
-        stem: 'A nurse is monitoring a patient with shortness of breath. Which finding should be escalated first?',
-        options: ['Mild fatigue', 'Oxygen saturation of 84%', 'Intermittent nausea', 'Pain score of 3 out of 10'],
-        correct: 1,
-      },
-      {
-        id: 'demo-mcq-2',
-        format: 'Multiple Choice (Single Answer)',
-        difficulty: 'Easy',
-        stem: 'Which practice best supports infection prevention before a wound dressing change?',
-        options: ['Lowering room temperature', 'Performing hand hygiene', 'Offering oral fluids', 'Documenting pain score'],
-        correct: 1,
-      },
-      {
-        id: 'demo-mcq-3',
-        format: 'Multiple Choice (Single Answer)',
-        difficulty: 'Hard',
-        stem: 'Which assessment finding most strongly suggests reduced cardiac output?',
-        options: ['Warm dry skin', 'Bounding peripheral pulses', 'New confusion with hypotension', 'Respiratory rate of 16'],
-        correct: 2,
-      },
-      {
-        id: 'demo-mcq-4',
-        format: 'Multiple Choice (Single Answer)',
-        difficulty: 'Medium',
-        stem: 'Which instruction is most important before collecting a clean-catch urine specimen?',
-        options: ['Avoid drinking water', 'Clean the urethral area first', 'Use the first morning sample only', 'Keep the specimen at room temperature for 24 hours'],
-        correct: 1,
-      },
-      {
-        id: 'demo-mcq-5',
-        format: 'Multiple Choice (Single Answer)',
-        difficulty: 'Medium',
-        stem: 'Which branch of the United States government has authority to interpret federal law?',
-        options: ['Legislative branch', 'Executive branch', 'Judicial branch', 'State governments'],
-        correct: 2,
-      },
-      {
-        id: 'demo-tf-1',
-        format: 'True / False',
-        difficulty: 'Easy',
-        stem: 'The Bill of Rights refers to the first ten amendments to the United States Constitution.',
-        correct: 'True',
-      },
-      {
-        id: 'demo-tf-2',
-        format: 'True / False',
-        difficulty: 'Medium',
-        stem: 'Federal statutes can never preempt state laws under the Supremacy Clause.',
-        correct: 'False',
-      },
-      {
-        id: 'demo-tf-3',
-        format: 'True / False',
-        difficulty: 'Easy',
-        stem: 'Hand hygiene should be performed before and after direct patient contact.',
-        correct: 'True',
-      },
-      {
-        id: 'demo-tf-4',
-        format: 'True / False',
-        difficulty: 'Medium',
-        stem: 'A Likert scale usually captures the degree of agreement or frequency on an ordered scale.',
-        correct: 'True',
-      },
-      {
-        id: 'demo-tf-5',
-        format: 'True / False',
-        difficulty: 'Hard',
-        stem: 'In research design, a larger sample always removes every possible source of bias.',
-        correct: 'False',
-      },
-      {
-        id: 'demo-fill-1',
-        format: 'Fill in the Blank',
-        difficulty: 'Easy',
-        stem: 'The first step before administering medication is to verify the patient\'s _____.',
-        correct: 'identity',
-      },
-      {
-        id: 'demo-fill-2',
-        format: 'Fill in the Blank',
-        difficulty: 'Medium',
-        stem: 'A focused respiratory assessment should include rate, rhythm, effort, and _____.',
-        correct: 'oxygen saturation',
-      },
-      {
-        id: 'demo-fill-3',
-        format: 'Fill in the Blank',
-        difficulty: 'Medium',
-        stem: 'In a research report, the section that describes how data was collected is the _____.',
-        correct: 'methodology',
-      },
+const SINGLE_MCQ = 'Multiple Choice (Single Answer)';
+const MULTI_MCQ = 'Multiple Choice (Multiple Answer)';
+const TRUE_FALSE = 'True / False';
+const FILL_BLANK = 'Fill in the Blank';
+const OPEN_ENDED = 'Open-Ended / Short Answer';
+const SCENARIO = 'Scenario-Based / Case Study';
+
+const NURSING_SETTINGS: HistorySessionSettings = {
+  project: 'p1',
+  topic: 'Cardiac physiology for a Level 2 nursing certification exam',
+  formats: [SINGLE_MCQ, TRUE_FALSE, FILL_BLANK],
+  distribution: {
+    [SINGLE_MCQ]: 4,
+    [TRUE_FALSE]: 3,
+    [FILL_BLANK]: 2,
+  },
+  quantity: 9,
+  difficulty: 1,
+};
+
+const LAW_SETTINGS: HistorySessionSettings = {
+  project: 'p1',
+  topic: 'United States constitutional law and legal research methods',
+  formats: [MULTI_MCQ, OPEN_ENDED, SCENARIO],
+  distribution: {
+    [MULTI_MCQ]: 3,
+    [OPEN_ENDED]: 2,
+    [SCENARIO]: 1,
+  },
+  quantity: 6,
+  difficulty: 2,
+};
+
+const NURSING_HISTORY_QUESTIONS: GeneratedQuestion[] = [
+  {
+    id: 'nursing-mcq-1',
+    format: SINGLE_MCQ,
+    difficulty: 'Medium',
+    stem: 'In cardiac physiology, which finding should a nurse prioritize when assessing a patient with shortness of breath?',
+    options: ['Mild fatigue', 'Oxygen saturation of 84%', 'Intermittent nausea', 'Pain score of 3 out of 10'],
+    correct: 1,
+  },
+  {
+    id: 'nursing-mcq-2',
+    format: SINGLE_MCQ,
+    difficulty: 'Medium',
+    stem: 'Which structure acts as the heart\'s natural pacemaker by initiating the electrical impulse?',
+    options: ['AV node', 'SA node', 'Bundle branches', 'Purkinje fibers'],
+    correct: 1,
+  },
+  {
+    id: 'nursing-mcq-3',
+    format: SINGLE_MCQ,
+    difficulty: 'Medium',
+    stem: 'A patient has new confusion, cool skin, and low blood pressure. Which concern best fits these findings?',
+    options: ['Improved perfusion', 'Reduced cardiac output', 'Normal oxygen exchange', 'Expected medication response'],
+    correct: 1,
+  },
+  {
+    id: 'nursing-mcq-4',
+    format: SINGLE_MCQ,
+    difficulty: 'Medium',
+    stem: 'Which assessment is most useful for detecting early respiratory compromise in a cardiac patient?',
+    options: ['Appetite pattern', 'Oxygen saturation trend', 'Skin turgor', 'Sleep preference'],
+    correct: 1,
+  },
+  {
+    id: 'nursing-tf-1',
+    format: TRUE_FALSE,
+    difficulty: 'Medium',
+    stem: 'The left ventricle pumps oxygenated blood to the systemic circulation.',
+    correct: 'True',
+  },
+  {
+    id: 'nursing-tf-2',
+    format: TRUE_FALSE,
+    difficulty: 'Medium',
+    stem: 'The right ventricle pumps oxygenated blood directly to the brain.',
+    correct: 'False',
+  },
+  {
+    id: 'nursing-tf-3',
+    format: TRUE_FALSE,
+    difficulty: 'Medium',
+    stem: 'A falling oxygen saturation can be an early sign of worsening cardiopulmonary status.',
+    correct: 'True',
+  },
+  {
+    id: 'nursing-fill-1',
+    format: FILL_BLANK,
+    difficulty: 'Medium',
+    stem: 'The first step before administering medication is to verify the patient\'s _____.',
+    correct: 'identity',
+  },
+  {
+    id: 'nursing-fill-2',
+    format: FILL_BLANK,
+    difficulty: 'Medium',
+    stem: 'A focused respiratory assessment should include rate, rhythm, effort, and _____.',
+    correct: 'oxygen saturation',
+  },
+];
+
+const LAW_HISTORY_QUESTIONS: GeneratedQuestion[] = [
+  {
+    id: 'law-multi-1',
+    format: MULTI_MCQ,
+    difficulty: 'Hard',
+    stem: 'Which TWO sources are most useful when confirming whether a federal constitutional rule is binding?',
+    options: ['A controlling court opinion', 'A citation history report', 'A social media thread', 'An unrelated contract template'],
+    correct: [0, 1],
+  },
+  {
+    id: 'law-multi-2',
+    format: MULTI_MCQ,
+    difficulty: 'Hard',
+    stem: 'Which TWO actions should a researcher take before relying on an older constitutional case?',
+    options: ['Check later citing decisions', 'Review negative treatment signals', 'Ignore procedural history', 'Use only the case summary'],
+    correct: [0, 1],
+  },
+  {
+    id: 'law-multi-3',
+    format: MULTI_MCQ,
+    difficulty: 'Hard',
+    stem: 'Which TWO materials are usually treated as persuasive rather than binding authority?',
+    options: ['Law review article', 'Treatise section', 'Controlling Supreme Court holding', 'Valid federal statute'],
+    correct: [0, 1],
+  },
+  {
+    id: 'law-open-1',
+    format: OPEN_ENDED,
+    difficulty: 'Hard',
+    stem: 'Explain how preemption affects the relationship between a valid federal statute and a conflicting state law.',
+    rubric: 'Credit answers that identify the Supremacy Clause, describe conflict between federal and state law, and explain when state law must yield.',
+  },
+  {
+    id: 'law-open-2',
+    format: OPEN_ENDED,
+    difficulty: 'Hard',
+    stem: 'Describe why checking subsequent case history is necessary before citing a case as good law.',
+    rubric: 'Credit answers that discuss later reversal, overruling, distinguishing, negative treatment, and reliability of cited authority.',
+  },
+  {
+    id: 'law-scenario-1',
+    format: SCENARIO,
+    difficulty: 'Hard',
+    stem: 'A researcher finds an old circuit case supporting a constitutional claim, but the case has several negative treatment flags. What should the researcher do before using it?',
+    rubric: 'Credit answers that require reviewing the negative treatment, checking controlling authority, and explaining whether the case can still be relied on.',
+  },
 ];
 
 const DEFAULT_HISTORY: HistorySession[] = [
   {
     id: 'nursing-advance-test',
     title: 'nursing_advance_test',
-    questions: DEMO_HISTORY_QUESTIONS,
+    questions: NURSING_HISTORY_QUESTIONS,
+    settings: NURSING_SETTINGS,
   },
   {
     id: 'law-resarch',
     title: 'law_resarch',
-    questions: DEMO_HISTORY_QUESTIONS.map(question => ({
-      ...question,
-      id: question.id.replace('demo-', 'law-'),
-    })),
+    questions: LAW_HISTORY_QUESTIONS,
+    settings: LAW_SETTINGS,
   },
 ];
 
@@ -144,6 +207,7 @@ const HistoryContext = createContext<HistoryContextValue | null>(null);
 export function HistoryProvider({ children }: { children: ReactNode }) {
   const [historySessions, setHistorySessions] = useState<HistorySession[]>(DEFAULT_HISTORY);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+  const [resetVersion, setResetVersion] = useState(0);
 
   const activeHistory = useMemo(
     () => historySessions.find(session => session.id === activeHistoryId) ?? null,
@@ -154,18 +218,23 @@ export function HistoryProvider({ children }: { children: ReactNode }) {
     setActiveHistoryId(current => (current === id ? null : id));
   }, []);
 
-  const addHistorySession = useCallback((title: string, questions: GeneratedQuestion[]) => {
+  const resetGenerator = useCallback(() => {
+    setActiveHistoryId(null);
+    setResetVersion(current => current + 1);
+  }, []);
+
+  const addHistorySession = useCallback((title: string, questions: GeneratedQuestion[], settings?: HistorySessionSettings) => {
     const id = `${title}-${Date.now()}`;
     setHistorySessions(current => [
-      { id, title, questions },
+      { id, title, questions, settings },
       ...current,
     ]);
     setActiveHistoryId(id);
   }, []);
 
   const value = useMemo(
-    () => ({ historySessions, activeHistoryId, activeHistory, selectHistory, addHistorySession }),
-    [activeHistory, activeHistoryId, addHistorySession, historySessions, selectHistory],
+    () => ({ historySessions, activeHistoryId, activeHistory, resetVersion, selectHistory, resetGenerator, addHistorySession }),
+    [activeHistory, activeHistoryId, addHistorySession, historySessions, resetGenerator, resetVersion, selectHistory],
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
